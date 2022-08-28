@@ -153,12 +153,26 @@ class DDIMSampler(object):
                                       unconditional_guidance_scale=unconditional_guidance_scale,
                                       unconditional_conditioning=unconditional_conditioning)
             img, pred_x0 = outs
-            if callback: callback(i)
-            if img_callback: img_callback(pred_x0, i)
+
+            stop_requested = False
+
+            if callback: 
+                response = callback(i)
+                if response and response.stop_requested:
+                    stop_requested = True
+
+            if img_callback: 
+                response = img_callback(pred_x0, i)
+                if response and response.stop_requested:
+                    stop_requested = True
+
 
             if index % log_every_t == 0 or index == total_steps - 1:
                 intermediates['x_inter'].append(img)
                 intermediates['pred_x0'].append(pred_x0)
+
+            if stop_requested:
+                return img, intermediates
 
         return img, intermediates
 
